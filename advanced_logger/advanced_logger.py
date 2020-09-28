@@ -33,6 +33,7 @@ _IS_TESTING = _default_is_testing_fn
 _TESTING_HOOK = None
 _DEBUG_HOOK = None
 _AdvancedJSONEncoder = AdvancedJSONEncoder  # TODO, swappable
+_CURRENT_BASE_LOGGER_CLASS = logging.Logger
 
 _LOGGER_OUTPUT_TYPE = Union[str, List, '_LOGGER_OUTPUT_TYPE']
 
@@ -103,9 +104,10 @@ def initialize_logger_settings(
         debug_hook_fn: Callable = None,
         reset_values_if_not_argument=False,
         update_existing=False,
+        base_logger_class=None,
 ):
     global _LOG_STREAM_DESTINATION, _LOG_FILE_DESTINATION, _PREFIX, _PROJECT_DIR_NAME, \
-        _IS_TESTING, _TESTING_HOOK, _DEBUG_HOOK
+        _IS_TESTING, _TESTING_HOOK, _DEBUG_HOOK, _CURRENT_BASE_LOGGER_CLASS
 
     if log_stream_destination is not None or reset_values_if_not_argument:
         _LOG_STREAM_DESTINATION = log_stream_destination
@@ -139,6 +141,10 @@ def initialize_logger_settings(
             _IS_TESTING = _default_is_testing_fn()
         else:
             _IS_TESTING = is_testing_fn
+    if base_logger_class is not None or reset_values_if_not_argument:
+        if base_logger_class is None:
+            base_logger_class = logging.Logger
+        _CURRENT_BASE_LOGGER_CLASS = base_logger_class
 
     logging.setLoggerClass(AdvancedLogger)
     basic_config()
@@ -183,7 +189,6 @@ def register_logger(name: str, level: int = None) -> AdvancedLogger:
 
     # Use the stdlib logging module to get our logger and set it's logging level
     # TODO swappable
-    og_logging_class = logging.getLoggerClass()
     logging.setLoggerClass(AdvancedLogger)
     # noinspection PyTypeChecker
     _logger = logging.getLogger(_PREFIX + name)  # type: AdvancedLogger
@@ -194,8 +199,8 @@ def register_logger(name: str, level: int = None) -> AdvancedLogger:
     if _logger not in _registered_loggers:
         _registered_loggers.add(_logger)
 
-    # TODO why is this line being done?
-    logging.setLoggerClass(og_logging_class)
+    # # TODO why was this line being done?
+    # logging.setLoggerClass(_ORIGINAL_BASE_LOGGER_CLASS)
 
     return _logger
 
@@ -280,7 +285,9 @@ def __log__(
         msg = json.dumps(cls=_AdvancedJSONEncoder, obj=log_obj, )
 
     if log_it:
-        self._log(
+        # noinspection PyProtectedMember
+        _CURRENT_BASE_LOGGER_CLASS._log(
+            self=self,
             level=level,
             msg=msg,
             args=args, exc_info=exc_info, extra=extra, stack_info=stack_info
@@ -330,24 +337,14 @@ def _log_exception_info(
             obj_as_str = json.dumps(obj, cls=_AdvancedJSONEncoder, indent=kwargs['indent'])
         else:
             obj_as_str = json.dumps(obj, cls=_AdvancedJSONEncoder)
-        self._log(
+        # noinspection PyProtectedMember
+        _CURRENT_BASE_LOGGER_CLASS._log(
+            self=self,
             level=logging.ERROR,
             msg=obj_as_str,
             args=args,
             exc_info=False,
         )
-
-    # TODO
-    # from debug.utils import should_save_debug_event
-    # save_it = should_save_debug_event(airline_code, route_code)
-    # if save_it:
-    #     from debug.utils import save_new_generic_debug_event
-    #     save_new_generic_debug_event(
-    #         msg=obj['msg'] or str(e),
-    #         metadata=obj,
-    #         airline_code=airline_code,
-    #         route_code=route_code,
-    #     )
 
     if return_it:
         return obj
