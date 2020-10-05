@@ -110,6 +110,8 @@ def initialize_logger_settings(
         _IS_TESTING, _TESTING_HOOK, _DEBUG_HOOK, _CURRENT_BASE_LOGGER_CLASS
 
     if log_stream_destination is not None or reset_values_if_not_argument:
+        if not log_stream_destination:
+            log_stream_destination = sys.stdout
         _LOG_STREAM_DESTINATION = log_stream_destination
     if log_file_destination is not None or reset_values_if_not_argument:
         _LOG_FILE_DESTINATION = log_file_destination
@@ -269,12 +271,12 @@ def __log__(
         return
 
     log_obj = {
+        'msg': msg,
         'meta': {
             'name': self.name,
             'time': datetime.utcnow(),
             'level': logging.getLevelName(level),
         },
-        'msg': msg,
     }
 
     try:
@@ -327,9 +329,9 @@ def _log_exception_info(
                 inner_formatted_tb = inner_formatted_tb[-1]
 
     obj = {
+        'msg': msg,
         'e': str(e),
         'traceback': formatted_tb,
-        'msg': msg
     }
 
     if log_it:
