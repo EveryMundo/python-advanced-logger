@@ -5,7 +5,7 @@ with open("README.md", "r") as fh:
 
 setuptools.setup(
     name="python-advanced-logger",  # Replace with your own username
-    version="0.1.5",
+    version="0.1.6",
     author="Neil Goldman",
     author_email="neil@everymundo.com",
     description="A logger module with a few extra quality-of-life features not available in the base logger module",
