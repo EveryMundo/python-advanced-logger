@@ -118,7 +118,7 @@ def initialize_logger_settings(
     if global_log_level is not None or reset_values_if_not_argument:
         if global_log_level is None:
             global_log_level = logging.INFO
-        set_global_log_level(global_log_level, update_existing=False)
+        set_global_log_level(global_log_level, update_existing=True)
     if global_log_name_prefix is not None or reset_values_if_not_argument:
         _PREFIX = global_log_name_prefix or ''
     if project_dir_name is not None or reset_values_if_not_argument:
